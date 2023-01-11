@@ -7,3 +7,5 @@ First, we take the distance and theta measurements, and convert them to cartesia
 ### Localization
 I use GraphSLAM to find localize the agent.
 
+## Results
+The mapping function returns a 2D array. Squares marked as 1 are occupied, and squares that are marked as 0 are not. The localization function returns an array that includes the x, y, and yaw of the robot(in that order). 
