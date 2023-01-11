@@ -7,6 +7,8 @@ import math
 import matplotlib.pyplot as plt
 import numpy as np
 from scipy.spatial.transform import Rotation as Rot
+
+STATE_SIZE = 3
 def maps_to_landmarks(map):
     """
     Extract landmarks from a map
@@ -106,7 +108,7 @@ def calc_edges(x_list, z_list):
                     edges.append(edge)
                     cost += (edge.e.T @ edge.omega @ edge.e)[0, 0]
 
-    print("cost:", cost, ",n_edge:", len(edges))
+    #print("cost:", cost, ",n_edge:", len(edges))
     return edges
 
 
@@ -142,7 +144,6 @@ def fill_H_and_b(H, b, edge):
 
 
 def graph_based_slam(x_init, hz):
-    print("start graph based slam")
 
     z_list = copy.deepcopy(hz)
 
@@ -150,27 +151,21 @@ def graph_based_slam(x_init, hz):
     nt = x_opt.shape[1]
     n = nt * STATE_SIZE
 
-    for itr in range(MAX_ITR):
-        edges = calc_edges(x_opt, z_list)
+    edges = calc_edges(x_opt, z_list)
 
-        H = np.zeros((n, n))
-        b = np.zeros((n, 1))
+    H = np.zeros((n, n))
+    b = np.zeros((n, 1))
 
-        for edge in edges:
-            H, b = fill_H_and_b(H, b, edge)
+    for edge in edges:
+        H, b = fill_H_and_b(H, b, edge)
 
-        # to fix origin
-        H[0:STATE_SIZE, 0:STATE_SIZE] += np.identity(STATE_SIZE)
+    # to fix origin
+    H[0:STATE_SIZE, 0:STATE_SIZE] += np.identity(STATE_SIZE)
 
-        dx = - np.linalg.inv(H) @ b
+    dx = - np.linalg.inv(H) @ b
 
-        for i in range(nt):
-            x_opt[0:3, i] += dx[i * 3:i * 3 + 3, 0]
-
-        diff = dx.T @ dx
-        print("iteration: %d, diff: %f" % (itr + 1, diff))
-        if diff < 1.0e-5:
-            break
+    for i in range(nt):
+        x_opt[0:3, i] += dx[i * 3:i * 3 + 3, 0]
 
     return x_opt
 
@@ -178,8 +173,8 @@ def graph_based_slam(x_init, hz):
 def calc_input(v, yaw_rate):
     """
     Args:
-        v: The agents velocity(meters per second)
-        yaw_rate: The rate of change of the agent's heading(radians per second)
+        v: The agent's velocity(meters per second)
+        yaw_rate: The agent's angular velocity(radians per second)
     Returns:
         Control input
     """
